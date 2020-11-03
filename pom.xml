@@ -32,9 +32,33 @@
             <version>0.11</version>
         </dependency>
         <dependency>
+            <groupId>com.google.auto.value</groupId>
+            <artifactId>auto-value-annotations</artifactId>
+            <version>1.7.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.auto.value</groupId>
+            <artifactId>auto-value</artifactId>
+            <version>1.7.4</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <version>1.0-rc7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.longdt</groupId>
+            <artifactId>vertx-orm-mysql</artifactId>
+            <version>1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.longdt</groupId>
+            <artifactId>vertx-orm-postgresql</artifactId>
+            <version>1.2.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
