@@ -3,11 +3,8 @@ package com.github.longdt.vertxorm.codegen;
 import com.github.longdt.vertxorm.annotation.Driver;
 import com.github.longdt.vertxorm.annotation.Repository;
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.SourceVersion;
@@ -18,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.getOnlyElement;
@@ -80,14 +78,9 @@ abstract class RepositoryDeclaration {
                         element, mirror, extendingValue);
                 return Optional.empty();
             }
-            ImmutableList<ExecutableElement> noParameterConstructors =
-                    FluentIterable.from(ElementFilter.constructorsIn(extendingType.getEnclosedElements()))
-                            .filter(new Predicate<ExecutableElement>() {
-                                @Override public boolean apply(ExecutableElement constructor) {
-                                    return constructor.getParameters().isEmpty();
-                                }
-                            })
-                            .toList();
+            List<ExecutableElement> noParameterConstructors = ElementFilter.constructorsIn(extendingType.getEnclosedElements()).stream()
+                            .filter(constructor -> constructor.getParameters().isEmpty())
+                            .collect(Collectors.toList());
             if (noParameterConstructors.isEmpty()) {
                 messager.printMessage(ERROR,
                         String.format("%s is not a valid supertype for a factory. "
@@ -112,8 +105,6 @@ abstract class RepositoryDeclaration {
                             mirror,
                             ImmutableMap.copyOf(values)));
         }
-
-
     }
 
     private static TypeElement getAnnotatedType(Element element) {

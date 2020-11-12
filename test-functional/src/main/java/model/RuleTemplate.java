@@ -1,10 +1,12 @@
 package model;
 
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.Map;
 
 @Entity
-public class RuleTemplate {
+public class RuleTemplate extends BaseEntity<RuleTemplate> {
+    @Id
     private Long id;
     private String name;
     private Map<String, ArgumentDescription> arguments;
@@ -66,6 +68,11 @@ public class RuleTemplate {
 
     public RuleTemplate setActive(boolean active) {
         this.active = active;
+        return this;
+    }
+
+    @Override
+    protected RuleTemplate self() {
         return this;
     }
 
