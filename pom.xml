@@ -6,7 +6,47 @@
 
     <groupId>com.github.longdt</groupId>
     <artifactId>vertx-orm-codegen</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
+
+    <name>Vertx ORM CodeGen</name>
+    <description>A simple annotation processor which automatic generate repository implementation for vertx-orm-*</description>
+    <url>https://github.com/longdt/vertx-orm-codegen</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Long Dinh</name>
+            <email>tronglongcntt@gmail.com</email>
+            <organization>Github</organization>
+            <organizationUrl>https://github.com/longdt</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/longdt/vertx-orm-codegen.git</connection>
+        <developerConnection>scm:git:ssh://github.com:longdt/vertx-orm-codegen.git</developerConnection>
+        <url>https://github.com/longdt/vertx-orm-codegen</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <name>Nexus Release Repository</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -51,13 +91,13 @@
         <dependency>
             <groupId>com.github.longdt</groupId>
             <artifactId>vertx-orm-mysql</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <version>1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.longdt</groupId>
             <artifactId>vertx-orm-postgresql</artifactId>
-            <version>1.2.1-SNAPSHOT</version>
+            <version>1.2.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
