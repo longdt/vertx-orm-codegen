@@ -52,18 +52,6 @@ public class RepositoryWriter {
         addSuperclass(factory, descriptor);
         addConstructor(factory, descriptor);
 
-
-//        for (TypeMirror implementingType : descriptor.implementingTypes()) {
-//            factory.addSuperinterface(TypeName.get(implementingType));
-//        }
-//
-//        ImmutableSet<TypeVariableName> factoryTypeVariables = getFactoryTypeVariables(descriptor);
-//
-//        addFactoryTypeParameters(factory, factoryTypeVariables);
-//        addFactoryMethods(factory, descriptor, factoryTypeVariables);
-//        addImplementationMethods(factory, descriptor);
-//        addCheckNotNullMethod(factory, descriptor);
-
         JavaFile.builder(descriptor.name().packageName(), factory.build())
                 .skipJavaLangImports(true)
                 .build()
@@ -76,19 +64,25 @@ public class RepositoryWriter {
         constructor.addParameter(TypeName.get(Pool.class), "pool");
         var entityDeclaration = descriptor.entityDeclaration();
         var entityElement = entityDeclaration.targetType();
+        var namingStrategy = descriptor.repositoryDeclaration().namingStrategy();
+        String tableName = entityDeclaration.tableName();
+        if (tableName.isEmpty()) {
+            tableName = entityDeclaration.targetType().getSimpleName().toString();
+        }
+        tableName = NamingStrategies.resolveName(namingStrategy, tableName);
         constructor.addCode("var mapperBuilder = $1T.<$2T, $3T>builder($4S, $3T::new)",
                 ClassName.get(RowMapper.class),
                 entityDeclaration.pkField().javaType(),
                 entityElement,
-                entityDeclaration.tableName());
+                tableName);
         constructor.addCode("\n\t\t.pk($1S, $2T::get$3L, $2T::set$3L, true)",
-                entityDeclaration.pkField().fieldName(),
+                NamingStrategies.resolveName(namingStrategy, entityDeclaration.pkField().fieldName()),
                 entityElement,
                 toPropertyMethodSuffix(entityDeclaration.pkField().fieldName()));
         for (var fieldEntry : entityDeclaration.fieldsMap().entrySet()) {
             var field = fieldEntry.getValue();
             constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L)",
-                    field.fieldName(),
+                    NamingStrategies.resolveName(namingStrategy, field.fieldName()),
                     entityElement,
                     toPropertyMethodSuffix(field.fieldName()));
         }

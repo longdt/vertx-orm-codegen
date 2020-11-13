@@ -24,4 +24,6 @@ public @interface Repository {
     Class<? extends CrudRepository> extending() default CrudRepository.class;
 
     Driver driver() default Driver.POSTGRESQL;
+
+    NamingStrategy namingStrategy() default NamingStrategy.SNAKE_CASE;
 }

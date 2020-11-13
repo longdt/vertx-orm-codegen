@@ -1,6 +1,7 @@
 package com.github.longdt.vertxorm.codegen;
 
 import com.github.longdt.vertxorm.annotation.Driver;
+import com.github.longdt.vertxorm.annotation.NamingStrategy;
 import com.github.longdt.vertxorm.annotation.Repository;
 import com.github.longdt.vertxorm.repository.CrudRepository;
 import com.google.auto.value.AutoValue;
@@ -35,6 +36,7 @@ abstract class RepositoryDeclaration {
     abstract Optional<String> className();
     abstract TypeElement extendingType();
     abstract Driver driver();
+    abstract NamingStrategy namingStrategy();
     abstract AnnotationMirror mirror();
     abstract ImmutableMap<String, AnnotationValue> valuesMap();
 
@@ -77,7 +79,7 @@ abstract class RepositoryDeclaration {
                     contentEquals(Repository.class.getName()));
             Map<String, AnnotationValue> values =
                     Mirrors.simplifyAnnotationValueMap(elements.getElementValuesWithDefaults(mirror));
-            checkState(values.size() == 3);
+            checkState(values.size() == 4);
 
             // className value is a string, so we can just call toString
             AnnotationValue classNameValue = values.get("className");
@@ -121,6 +123,9 @@ abstract class RepositoryDeclaration {
             AnnotationValue driverValue = checkNotNull(values.get("driver"));
             Driver driver = AnnotationValues.asEnum(driverValue, Driver.class);
 
+            AnnotationValue namingStrategySValue = checkNotNull(values.get("namingStrategy"));
+            NamingStrategy namingStrategy = AnnotationValues.asEnum(namingStrategySValue, NamingStrategy.class);
+
             return Optional.of(
                     new AutoValue_RepositoryDeclaration(
                             getAnnotatedType(element),
@@ -128,6 +133,7 @@ abstract class RepositoryDeclaration {
                             className.isEmpty() ? Optional.empty() : Optional.of(className),
                             extendingType,
                             driver,
+                            namingStrategy,
                             mirror,
                             ImmutableMap.copyOf(values)));
         }
