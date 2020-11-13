@@ -2,6 +2,7 @@ package com.github.longdt.vertxorm.codegen;
 
 import com.github.longdt.vertxorm.annotation.Driver;
 import com.github.longdt.vertxorm.annotation.Repository;
+import com.github.longdt.vertxorm.repository.CrudRepository;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.google.auto.common.MoreElements.getPackage;
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static javax.lang.model.element.ElementKind.CLASS;
@@ -35,6 +37,29 @@ abstract class RepositoryDeclaration {
     abstract Driver driver();
     abstract AnnotationMirror mirror();
     abstract ImmutableMap<String, AnnotationValue> valuesMap();
+
+    PackageAndClass getRepositoryName() {
+        String packageName = getPackage(targetType()).getQualifiedName().toString();
+        if (className().isPresent()) {
+            return PackageAndClass.of(packageName, className().get());
+        }
+        StringBuilder builder = new StringBuilder();
+        for (String enclosingSimpleName : targetEnclosingSimpleNames()) {
+            builder.append(enclosingSimpleName).append('_');
+        }
+        builder.append(targetType().getSimpleName()).append("Factory");
+        return PackageAndClass.of(packageName, builder.toString());
+    }
+
+    private ImmutableList<String> targetEnclosingSimpleNames() {
+        ImmutableList.Builder<String> simpleNames = ImmutableList.builder();
+        for (Element element = targetType().getEnclosingElement();
+             !element.getKind().equals(PACKAGE);
+             element = element.getEnclosingElement()) {
+            simpleNames.add(element.getSimpleName().toString());
+        }
+        return simpleNames.build().reverse();
+    }
 
     public static class Factory {
         private final Elements elements;
@@ -78,20 +103,21 @@ abstract class RepositoryDeclaration {
                         element, mirror, extendingValue);
                 return Optional.empty();
             }
-            List<ExecutableElement> noParameterConstructors = ElementFilter.constructorsIn(extendingType.getEnclosedElements()).stream()
-                            .filter(constructor -> constructor.getParameters().isEmpty())
-                            .collect(Collectors.toList());
-            if (noParameterConstructors.isEmpty()) {
-                messager.printMessage(ERROR,
-                        String.format("%s is not a valid supertype for a factory. "
-                                        + "Factory supertypes must have a no-arg constructor.",
-                                extendingType.getQualifiedName()),
-                        element, mirror, extendingValue);
-                return Optional.empty();
-            } else if (noParameterConstructors.size() > 1) {
-                throw new IllegalStateException("Multiple constructors with no parameters??");
+            if (!isCrudRepository(extendingType)) {
+                List<ExecutableElement> noParameterConstructors = ElementFilter.constructorsIn(extendingType.getEnclosedElements()).stream()
+                        .filter(constructor -> constructor.getParameters().isEmpty())
+                        .collect(Collectors.toList());
+                if (noParameterConstructors.isEmpty()) {
+                    messager.printMessage(ERROR,
+                            String.format("%s is not a valid supertype for a factory. "
+                                            + "Factory supertypes must have a no-arg constructor.",
+                                    extendingType.getQualifiedName()),
+                            element, mirror, extendingValue);
+                    return Optional.empty();
+                } else if (noParameterConstructors.size() > 1) {
+                    throw new IllegalStateException("Multiple constructors with no parameters??");
+                }
             }
-
             AnnotationValue driverValue = checkNotNull(values.get("driver"));
             Driver driver = AnnotationValues.asEnum(driverValue, Driver.class);
 
@@ -120,7 +146,14 @@ abstract class RepositoryDeclaration {
         return SourceVersion.isIdentifier(identifier) && !SourceVersion.isKeyword(identifier);
     }
 
+    static boolean isCrudRepository(TypeElement type) {
+        return type.getQualifiedName().contentEquals(CrudRepository.class.getName());
+    }
+
     static boolean isValidSupertypeForClass(TypeElement type) {
+        if (isCrudRepository(type)) {
+            return true;
+        }
         if (!type.getKind().equals(CLASS)) {
             return false;
         }

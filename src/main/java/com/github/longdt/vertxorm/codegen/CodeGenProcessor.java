@@ -56,7 +56,8 @@ public class CodeGenProcessor extends AbstractProcessor {
                     messager.printMessage(Diagnostic.Kind.ERROR, "Failed to process repository: " + repositoryDeclaration.className());
                     continue;
                 }
-                new RepositoryWriter(processingEnv).writeRepository(new AutoValue_RepositoryDescriptor(null, null, repositoryDeclaration));
+                var descriptor = RepositoryDescriptor.create(repositoryDeclaration, entityDeclarationOpt.get());
+                new RepositoryWriter(processingEnv).writeRepository(descriptor);
             }
 
             System.out.println(declaration);

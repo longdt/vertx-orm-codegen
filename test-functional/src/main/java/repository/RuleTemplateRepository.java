@@ -6,7 +6,8 @@ import com.github.longdt.vertxorm.repository.CrudRepository;
 import model.RuleTemplate;
 import repository.impl.RuleTemplateRepositoryImpl;
 
-@Repository(extending = RuleTemplateRepositoryImpl.class)
+@Repository
+        (extending = RuleTemplateRepositoryImpl.class)
 public interface RuleTemplateRepository extends CrudRepository<Long, RuleTemplate> {
     void doOtherThing();
 }

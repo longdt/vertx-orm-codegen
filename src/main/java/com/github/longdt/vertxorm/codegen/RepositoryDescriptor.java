@@ -8,5 +8,13 @@ import javax.lang.model.type.TypeMirror;
 abstract class RepositoryDescriptor {
     abstract PackageAndClass name();
     abstract TypeMirror extendingType();
-    abstract RepositoryDeclaration declaration();
+    abstract RepositoryDeclaration repositoryDeclaration();
+    abstract EntityDeclaration entityDeclaration();
+
+    public static RepositoryDescriptor create(RepositoryDeclaration repositoryDeclaration, EntityDeclaration entityDeclaration) {
+        return new AutoValue_RepositoryDescriptor(repositoryDeclaration.getRepositoryName(),
+                repositoryDeclaration.extendingType().asType(),
+                repositoryDeclaration,
+                entityDeclaration);
+    }
 }

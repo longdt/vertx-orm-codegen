@@ -1,13 +1,11 @@
 package com.github.longdt.vertxorm.codegen;
 
-import com.github.longdt.vertxorm.annotation.Repository;
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
@@ -15,17 +13,15 @@ import javax.lang.model.util.Types;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
 
 @AutoValue
 abstract class EntityDeclaration {
+    abstract TypeElement targetType();
     abstract String tableName();
-
     abstract FieldDeclaration pkField();
-
     abstract Map<String, FieldDeclaration> fieldsMap();
 
     public static class Factory {
@@ -72,7 +68,7 @@ abstract class EntityDeclaration {
                     .stream()
                     .filter(field -> !field.fieldName().equals(pk.fieldName()))
                     .collect(TreeMap::new, (m, e) -> m.put(e.fieldName(), e), Map::putAll);
-            return Optional.of(new AutoValue_EntityDeclaration(tableName, pk, fields));
+            return Optional.of(new AutoValue_EntityDeclaration((TypeElement) entityElement, tableName, pk, fields));
         }
 
         Optional<String> findIdField(Element entityElement) {
