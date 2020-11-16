@@ -10,4 +10,5 @@ abstract class FieldDeclaration {
     abstract String fieldName();
     abstract TypeMirror javaType();
     abstract Optional<String> sqlType();
+    abstract Optional<TypeMirror> converter();
 }

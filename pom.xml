@@ -6,7 +6,7 @@
 
     <groupId>com.github.longdt</groupId>
     <artifactId>vertx-orm-codegen</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <name>Vertx ORM CodeGen</name>
     <description>A simple annotation processor which automatic generate repository implementation for vertx-orm-*</description>

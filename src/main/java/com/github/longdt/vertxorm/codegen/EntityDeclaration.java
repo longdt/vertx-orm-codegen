@@ -6,13 +6,17 @@ import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -20,8 +24,11 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 @AutoValue
 abstract class EntityDeclaration {
     abstract TypeElement targetType();
+
     abstract String tableName();
+
     abstract FieldDeclaration pkField();
+
     abstract Map<String, FieldDeclaration> fieldsMap();
 
     public static class Factory {
@@ -64,32 +71,46 @@ abstract class EntityDeclaration {
                 return Optional.empty();
             }
             var pk = createPkField(idNameOpt.get(), methods);
-            TreeMap<String, FieldDeclaration> fields = createFields(methods)
+            TreeMap<String, FieldDeclaration> fields = createFields((TypeElement) entityElement, methods)
                     .stream()
                     .filter(field -> !field.fieldName().equals(pk.fieldName()))
                     .collect(TreeMap::new, (m, e) -> m.put(e.fieldName(), e), Map::putAll);
             return Optional.of(new AutoValue_EntityDeclaration((TypeElement) entityElement, tableName, pk, fields));
         }
 
-        Optional<String> findIdField(Element entityElement) {
+        Optional<VariableElement> findIdField(Element entityElement) {
             return ElementFilter.fieldsIn(entityElement.getEnclosedElements())
                     .stream()
                     .filter(f -> f.getAnnotation(Id.class) != null)
-                    .map(f -> f.getSimpleName().toString())
                     .findAny();
         }
 
-        FieldDeclaration createPkField(String pkName, List<ExecutableElement> methods) {
+        FieldDeclaration createPkField(VariableElement pkField, List<ExecutableElement> methods) {
+            var pkName = pkField.getSimpleName().toString();
             var getter = methods.stream()
                     .filter(m -> isPropertyMethod(m, "get", pkName))
                     .findAny();
+            if (getter.isEmpty()) {
+                messager.printMessage(ERROR,
+                        String.format("%s has no valid getter. "
+                                        + "id must have getter method.",
+                                pkName));
+            }
             var setter = methods.stream()
                     .filter(m -> isPropertyMethod(m, "set", pkName))
                     .findAny();
-            return new AutoValue_FieldDeclaration(pkName, getter.get().getReturnType(), Optional.empty());
+            var converter = Optional.<TypeMirror>empty();
+            Convert convert = pkField.getAnnotation(Convert.class);
+            if (convert != null) {
+                converter = Optional.ofNullable(AnnotationHelper.getTypeMirror(elements, convert::converter));
+            }
+            return new AutoValue_FieldDeclaration(pkName, getter.get().getReturnType(), Optional.empty(), converter);
         }
 
-        List<FieldDeclaration> createFields(List<ExecutableElement> methods) {
+        List<FieldDeclaration> createFields(TypeElement entityElement, List<ExecutableElement> methods) {
+            var fieldMap = AnnotationHelper.getAllFields(types, entityElement)
+                    .stream()
+                    .collect(Collectors.toMap(e -> e.getSimpleName().toString(), Function.identity()));
             var getterMap = new HashMap<String, ExecutableElement>(methods.size());
             var setterMap = new HashMap<String, ExecutableElement>(methods.size());
             for (var method : methods) {
@@ -104,7 +125,15 @@ abstract class EntityDeclaration {
             }
             return getterMap.entrySet().stream()
                     .filter(entry -> setterMap.containsKey(entry.getKey()))
-                    .map(entry -> new AutoValue_FieldDeclaration(entry.getKey(), entry.getValue().getReturnType(), Optional.empty()))
+                    .map(entry -> {
+                        var field = fieldMap.get(entry.getKey());
+                        Optional<TypeMirror> converter = Optional.empty();
+                        Convert convert;
+                        if (field != null && (convert = field.getAnnotation(Convert.class)) != null) {
+                            converter = Optional.ofNullable(AnnotationHelper.getTypeMirror(elements, convert::converter));
+                        }
+                        return new AutoValue_FieldDeclaration(entry.getKey(), entry.getValue().getReturnType(), Optional.empty(), converter);
+                    })
                     .collect(Collectors.toList());
         }
 

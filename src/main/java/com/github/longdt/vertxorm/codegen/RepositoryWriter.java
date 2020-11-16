@@ -10,12 +10,10 @@ import io.vertx.sqlclient.Pool;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.io.IOException;
-import java.lang.reflect.Type;
 
 import static com.google.auto.common.GeneratedAnnotationSpecs.generatedAnnotationSpec;
 import static com.squareup.javapoet.MethodSpec.constructorBuilder;
@@ -67,29 +65,45 @@ public class RepositoryWriter {
         var namingStrategy = descriptor.repositoryDeclaration().namingStrategy();
         String tableName = entityDeclaration.tableName();
         if (tableName.isEmpty()) {
-            tableName = entityDeclaration.targetType().getSimpleName().toString();
+            var entityName = entityDeclaration.targetType().getSimpleName().toString();
+            tableName = NamingStrategies.resolveName(namingStrategy, entityName);
         }
-        tableName = NamingStrategies.resolveName(namingStrategy, tableName);
+        var pkField = entityDeclaration.pkField();
+        var pkConverter = pkField.converter();
+        pkConverter.ifPresent(converter -> constructor.addStatement("var pkConverter = new $1T()", converter));
+        entityDeclaration.fieldsMap().entrySet()
+                .stream()
+                .filter(e -> e.getValue().converter().isPresent())
+                .forEach(e -> constructor.addStatement("var $1LConverter = new $2T()", e.getKey(), e.getValue().converter().get()));
         constructor.addCode("var mapperBuilder = $1T.<$2T, $3T>builder($4S, $3T::new)",
                 ClassName.get(RowMapper.class),
-                entityDeclaration.pkField().javaType(),
+                pkField.javaType(),
                 entityElement,
                 tableName);
         constructor.addCode("\n\t\t.pk($1S, $2T::get$3L, $2T::set$3L, true)",
-                NamingStrategies.resolveName(namingStrategy, entityDeclaration.pkField().fieldName()),
+                NamingStrategies.resolveName(namingStrategy, pkField.fieldName()),
                 entityElement,
-                toPropertyMethodSuffix(entityDeclaration.pkField().fieldName()));
+                toPropertyMethodSuffix(pkField.fieldName()));
+        pkConverter.ifPresent(v -> constructor.addCode("\n\t\t.pkConverter(pkConverter::convertToDatabaseColumn, pkConverter::convertToEntityAttribute)"));
         for (var fieldEntry : entityDeclaration.fieldsMap().entrySet()) {
             var field = fieldEntry.getValue();
-            constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L)",
-                    NamingStrategies.resolveName(namingStrategy, field.fieldName()),
-                    entityElement,
-                    toPropertyMethodSuffix(field.fieldName()));
+            if (field.converter().isEmpty()) {
+                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L)",
+                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
+                        entityElement,
+                        toPropertyMethodSuffix(field.fieldName()));
+            } else {
+                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L, $4LConverter::convertToDatabaseColumn, $4LConverter::convertToEntityAttribute)",
+                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
+                        entityElement,
+                        toPropertyMethodSuffix(field.fieldName()),
+                        fieldEntry.getKey());
+            }
         }
         constructor.addCode(";\n");
         constructor.addStatement("init(pool, ($1T<$2T, $3T>) mapperBuilder.build())",
                 ClassName.get(RowMapperImpl.class),
-                entityDeclaration.pkField().javaType(),
+                pkField.javaType(),
                 entityElement);
         factory.addMethod(constructor.build());
     }

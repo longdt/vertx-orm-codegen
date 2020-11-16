@@ -1,5 +1,6 @@
 package model;
 
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.util.Map;
@@ -7,11 +8,14 @@ import java.util.Map;
 @Entity
 public class RuleTemplate extends BaseEntity<RuleTemplate> {
     @Id
+    @Convert(converter = IdConverter.class)
     private Long id;
     private String name;
+    @Convert(converter = ArgumentsConverter.class)
     private Map<String, ArgumentDescription> arguments;
     private String flinkJob;
     private String assignee;
+    @Convert(converter = ActiveConverter.class)
     private boolean active;
 
     public RuleTemplate() {
