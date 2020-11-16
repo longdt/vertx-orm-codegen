@@ -23,16 +23,14 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.SimpleAnnotationValueVisitor6;
-import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.*;
 
 final class AnnotationValues {
     private AnnotationValues() {}
 
     static boolean asBoolean(AnnotationValue value) {
         return value.accept(
-                new SimpleAnnotationValueVisitor6<Boolean, Void>() {
+                new SimpleAnnotationValueVisitor9<Boolean, Void>() {
                     @Override protected Boolean defaultAction(Object o, Void p) {
                         throw new IllegalArgumentException();
                     }
@@ -45,14 +43,14 @@ final class AnnotationValues {
 
     static TypeElement asType(AnnotationValue value) {
         return value.accept(
-                new SimpleAnnotationValueVisitor6<TypeElement, Void>() {
+                new SimpleAnnotationValueVisitor9<TypeElement, Void>() {
                     @Override protected TypeElement defaultAction(Object o, Void p) {
                         throw new IllegalArgumentException();
                     }
 
                     @Override public TypeElement visitType(TypeMirror t, Void p) {
                         return t.accept(
-                                new SimpleTypeVisitor6<TypeElement, Void>() {
+                                new SimpleTypeVisitor9<TypeElement, Void>() {
                                     @Override
                                     protected TypeElement defaultAction(TypeMirror e, Void p) {
                                         throw new AssertionError();
@@ -70,7 +68,7 @@ final class AnnotationValues {
 
     static <E extends Enum<E>> E asEnum(AnnotationValue value, Class<E> enumType) {
         return value.accept(
-                new SimpleAnnotationValueVisitor6<E, Void>() {
+                new SimpleAnnotationValueVisitor9<E, Void>() {
                     @Override protected E defaultAction(Object o, Void p) {
                         throw new IllegalArgumentException();
                     }
@@ -83,7 +81,7 @@ final class AnnotationValues {
 
     static ImmutableList<? extends AnnotationValue> asList(AnnotationValue value) {
         return value.accept(
-                new SimpleAnnotationValueVisitor6<ImmutableList<? extends AnnotationValue>, Void>() {
+                new SimpleAnnotationValueVisitor9<ImmutableList<? extends AnnotationValue>, Void>() {
                     @Override
                     protected ImmutableList<? extends AnnotationValue> defaultAction(Object o, Void p) {
                         throw new IllegalArgumentException();

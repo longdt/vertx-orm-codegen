@@ -14,6 +14,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.*;
 import java.util.function.Function;
@@ -28,6 +29,8 @@ abstract class EntityDeclaration {
     abstract String tableName();
 
     abstract FieldDeclaration pkField();
+
+    abstract boolean autoGenPK();
 
     abstract Map<String, FieldDeclaration> fieldsMap();
 
@@ -61,8 +64,8 @@ abstract class EntityDeclaration {
                 return Optional.empty();
             }
             var methods = ElementFilter.methodsIn(elements.getAllMembers((TypeElement) entityElement));
-            var idNameOpt = findIdField(entityElement);
-            if (idNameOpt.isEmpty()) {
+            var idOpt = findIdField(entityElement);
+            if (idOpt.isEmpty()) {
                 messager.printMessage(ERROR,
                         String.format("%s has no valid id. "
                                         + "Entity must have a id field.",
@@ -70,12 +73,13 @@ abstract class EntityDeclaration {
                         entityElement, null, null);
                 return Optional.empty();
             }
-            var pk = createPkField(idNameOpt.get(), methods);
+            var pk = createPkField(idOpt.get(), methods);
+            var autoGenPk = idOpt.get().getAnnotation(GeneratedValue.class) != null;
             TreeMap<String, FieldDeclaration> fields = createFields((TypeElement) entityElement, methods)
                     .stream()
                     .filter(field -> !field.fieldName().equals(pk.fieldName()))
                     .collect(TreeMap::new, (m, e) -> m.put(e.fieldName(), e), Map::putAll);
-            return Optional.of(new AutoValue_EntityDeclaration((TypeElement) entityElement, tableName, pk, fields));
+            return Optional.of(new AutoValue_EntityDeclaration((TypeElement) entityElement, tableName, pk, autoGenPk, fields));
         }
 
         Optional<VariableElement> findIdField(Element entityElement) {

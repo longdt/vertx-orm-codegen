@@ -80,10 +80,11 @@ public class RepositoryWriter {
                 pkField.javaType(),
                 entityElement,
                 tableName);
-        constructor.addCode("\n\t\t.pk($1S, $2T::get$3L, $2T::set$3L, true)",
+        constructor.addCode("\n\t\t.pk($1S, $2T::get$3L, $2T::set$3L, $4L)",
                 NamingStrategies.resolveName(namingStrategy, pkField.fieldName()),
                 entityElement,
-                toPropertyMethodSuffix(pkField.fieldName()));
+                toPropertyMethodSuffix(pkField.fieldName()),
+                entityDeclaration.autoGenPK());
         pkConverter.ifPresent(v -> constructor.addCode("\n\t\t.pkConverter(pkConverter::convertToDatabaseColumn, pkConverter::convertToEntityAttribute)"));
         for (var fieldEntry : entityDeclaration.fieldsMap().entrySet()) {
             var field = fieldEntry.getValue();
