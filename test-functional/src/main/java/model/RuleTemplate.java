@@ -2,6 +2,7 @@ package model;
 
 import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.Map;
 
@@ -9,6 +10,7 @@ import java.util.Map;
 public class RuleTemplate extends BaseEntity<RuleTemplate> {
     @Id
     @Convert(converter = IdConverter.class)
+    @GeneratedValue
     private Long id;
     private String name;
     @Convert(converter = ArgumentsConverter.class)
@@ -17,6 +19,7 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
     private String assignee;
     @Convert(converter = ActiveConverter.class)
     private boolean active;
+    private RuleTemplateStatus status;
 
     public RuleTemplate() {
     }
@@ -72,6 +75,15 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
 
     public RuleTemplate setActive(boolean active) {
         this.active = active;
+        return this;
+    }
+
+    public RuleTemplateStatus getStatus() {
+        return status;
+    }
+
+    public RuleTemplate setStatus(RuleTemplateStatus status) {
+        this.status = status;
         return this;
     }
 

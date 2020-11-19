@@ -10,6 +10,7 @@ import io.vertx.sqlclient.Pool;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -88,17 +89,23 @@ public class RepositoryWriter {
         pkConverter.ifPresent(v -> constructor.addCode("\n\t\t.pkConverter(pkConverter::convertToDatabaseColumn, pkConverter::convertToEntityAttribute)"));
         for (var fieldEntry : entityDeclaration.fieldsMap().entrySet()) {
             var field = fieldEntry.getValue();
-            if (field.converter().isEmpty()) {
-                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L)",
-                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
-                        entityElement,
-                        toPropertyMethodSuffix(field.fieldName()));
-            } else {
+            if (field.converter().isPresent()) {
                 constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L, $4LConverter::convertToDatabaseColumn, $4LConverter::convertToEntityAttribute)",
                         NamingStrategies.resolveName(namingStrategy, field.fieldName()),
                         entityElement,
                         toPropertyMethodSuffix(field.fieldName()),
                         fieldEntry.getKey());
+            } else if (types.asElement(field.javaType()).getKind() == ElementKind.ENUM) {
+                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L, $4T::toString, $4T::valueOf)",
+                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
+                        entityElement,
+                        toPropertyMethodSuffix(field.fieldName()),
+                        field.javaType());
+            } else {
+                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L)",
+                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
+                        entityElement,
+                        toPropertyMethodSuffix(field.fieldName()));
             }
         }
         constructor.addCode(";\n");
