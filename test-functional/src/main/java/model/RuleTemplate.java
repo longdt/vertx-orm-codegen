@@ -9,7 +9,6 @@ import java.util.Map;
 @Entity
 public class RuleTemplate extends BaseEntity<RuleTemplate> {
     @Id
-    @Convert(converter = IdConverter.class)
     @GeneratedValue
     private Long id;
     private String name;
@@ -17,7 +16,6 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
     private Map<String, ArgumentDescription> arguments;
     private String flinkJob;
     private String assignee;
-    @Convert(converter = ActiveConverter.class)
     private boolean active;
     private RuleTemplateStatus status;
 

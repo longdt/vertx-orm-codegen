@@ -11,6 +11,7 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -95,7 +96,7 @@ public class RepositoryWriter {
                         entityElement,
                         toPropertyMethodSuffix(field.fieldName()),
                         fieldEntry.getKey());
-            } else if (types.asElement(field.javaType()).getKind() == ElementKind.ENUM) {
+            } else if (field.javaType().getKind() == TypeKind.DECLARED && types.asElement(field.javaType()).getKind() == ElementKind.ENUM) {
                 constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L, $4T::toString, $4T::valueOf)",
                         NamingStrategies.resolveName(namingStrategy, field.fieldName()),
                         entityElement,
