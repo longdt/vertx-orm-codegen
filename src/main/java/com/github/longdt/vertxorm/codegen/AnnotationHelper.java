@@ -1,5 +1,7 @@
 package com.github.longdt.vertxorm.codegen;
 
+import com.squareup.javapoet.ClassName;
+
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.MirroredTypeException;
@@ -22,12 +24,29 @@ public class AnnotationHelper {
         return result;
     }
 
-    public static TypeMirror getTypeMirror(Elements elements, Supplier<Class> classSupplier) {
+    public static TypeMirror getTypeMirror(Elements elements, Class<?> clazz) {
+        return elements.getTypeElement(clazz.getCanonicalName()).asType();
+    }
+
+    public static TypeMirror getTypeMirror(Elements elements, Supplier<Class<?>> classSupplier) {
         try {
-            Class clazz = classSupplier.get();
+            Class<?> clazz = classSupplier.get();
             return elements.getTypeElement(clazz.getCanonicalName()).asType();
         } catch (MirroredTypeException e) {
             return e.getTypeMirror();
         }
+    }
+
+    public static TypeElement getTypeElement(Elements elements, Types types, Supplier<Class<?>> classSupplier) {
+        try {
+            Class<?> clazz = classSupplier.get();
+            return elements.getTypeElement(clazz.getCanonicalName());
+        } catch (MirroredTypeException e) {
+            return (TypeElement) types.asElement(e.getTypeMirror());
+        }
+    }
+
+    public static String getSimpleClassName(TypeMirror typeMirror) {
+        return ((ClassName) ClassName.get(typeMirror)).simpleName();
     }
 }

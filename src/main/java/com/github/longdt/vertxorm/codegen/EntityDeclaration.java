@@ -1,5 +1,7 @@
 package com.github.longdt.vertxorm.codegen;
 
+import com.github.longdt.vertxorm.annotation.NamingStrategy;
+import com.github.longdt.vertxorm.format.Case;
 import com.google.auto.value.AutoValue;
 
 import javax.annotation.processing.Messager;
@@ -19,6 +21,7 @@ import javax.persistence.Id;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
 
@@ -28,11 +31,17 @@ abstract class EntityDeclaration {
 
     abstract String tableName();
 
-    abstract FieldDeclaration pkField();
+    abstract FieldDeclaration idField();
 
-    abstract boolean autoGenPK();
+    abstract boolean autoId();
 
     abstract Map<String, FieldDeclaration> fieldsMap();
+
+    abstract Case namingStrategy();
+
+    Stream<FieldDeclaration> fieldStream() {
+        return Stream.concat(Stream.of(idField()), fieldsMap().values().stream());
+    }
 
     public static class Factory {
         private final Elements elements;
@@ -73,13 +82,15 @@ abstract class EntityDeclaration {
                         entityElement, null, null);
                 return Optional.empty();
             }
-            var pk = createPkField(idOpt.get(), methods);
-            var autoGenPk = idOpt.get().getAnnotation(GeneratedValue.class) != null;
+            var idField = createIdField(idOpt.get(), methods);
+            var autoId = idOpt.get().getAnnotation(GeneratedValue.class) != null;
             TreeMap<String, FieldDeclaration> fields = createFields((TypeElement) entityElement, methods)
                     .stream()
-                    .filter(field -> !field.fieldName().equals(pk.fieldName()))
+                    .filter(field -> !field.fieldName().equals(idField.fieldName()))
                     .collect(TreeMap::new, (m, e) -> m.put(e.fieldName(), e), Map::putAll);
-            return Optional.of(new AutoValue_EntityDeclaration((TypeElement) entityElement, tableName, pk, autoGenPk, fields));
+            var namingStrategy = entityElement.getAnnotation(NamingStrategy.class);
+            var namingStrategyValue = namingStrategy != null ? namingStrategy.value() : Case.CAMEL_CASE;
+            return Optional.of(new AutoValue_EntityDeclaration((TypeElement) entityElement, tableName, idField, autoId, fields, namingStrategyValue));
         }
 
         Optional<VariableElement> findIdField(Element entityElement) {
@@ -89,26 +100,34 @@ abstract class EntityDeclaration {
                     .findAny();
         }
 
-        FieldDeclaration createPkField(VariableElement pkField, List<ExecutableElement> methods) {
-            var pkName = pkField.getSimpleName().toString();
+        FieldDeclaration createIdField(VariableElement idField, List<ExecutableElement> methods) {
+            var idName = idField.getSimpleName().toString();
             var getter = methods.stream()
-                    .filter(m -> isPropertyMethod(m, "get", pkName))
+                    .filter(m -> isPropertyMethod(m, "get", idName))
                     .findAny();
             if (getter.isEmpty()) {
                 messager.printMessage(ERROR,
                         String.format("%s has no valid getter. "
                                         + "id must have getter method.",
-                                pkName));
+                                idName));
             }
             var setter = methods.stream()
-                    .filter(m -> isPropertyMethod(m, "set", pkName))
+                    .filter(m -> isPropertyMethod(m, "set", idName))
                     .findAny();
-            var converter = Optional.<TypeMirror>empty();
-            Convert convert = pkField.getAnnotation(Convert.class);
+            return createFieldDeclaration(idField, idName);
+        }
+
+        private FieldDeclaration createFieldDeclaration(VariableElement field, String fieldName) {
+            Convert convert = field.getAnnotation(Convert.class);
+            TypeMirror converter = null;
+            TypeMirror sqlType = null;
             if (convert != null) {
-                converter = Optional.ofNullable(AnnotationHelper.getTypeMirror(elements, convert::converter));
+                var converterElement = AnnotationHelper.getTypeElement(elements, types, convert::converter);
+                converter = converterElement.asType();
+                var declaredType = (DeclaredType) converterElement.getInterfaces().get(0);
+                sqlType = ((DeclaredType) declaredType.getTypeArguments().get(1)).asElement().asType();
             }
-            return new AutoValue_FieldDeclaration(pkName, getter.get().getReturnType(), Optional.empty(), converter);
+            return new AutoValue_FieldDeclaration(fieldName, field.asType(), Optional.ofNullable(sqlType), Optional.ofNullable(converter));
         }
 
         List<FieldDeclaration> createFields(TypeElement entityElement, List<ExecutableElement> methods) {
@@ -127,16 +146,11 @@ abstract class EntityDeclaration {
                     setterMap.put(fieldName, method);
                 }
             }
-            return getterMap.entrySet().stream()
-                    .filter(entry -> setterMap.containsKey(entry.getKey()))
-                    .map(entry -> {
-                        var field = fieldMap.get(entry.getKey());
-                        Optional<TypeMirror> converter = Optional.empty();
-                        Convert convert;
-                        if (field != null && (convert = field.getAnnotation(Convert.class)) != null) {
-                            converter = Optional.ofNullable(AnnotationHelper.getTypeMirror(elements, convert::converter));
-                        }
-                        return new AutoValue_FieldDeclaration(entry.getKey(), entry.getValue().getReturnType(), Optional.empty(), converter);
+            return getterMap.keySet().stream()
+                    .filter(setterMap::containsKey)
+                    .map(fieldName -> {
+                        var field = fieldMap.get(fieldName);
+                        return createFieldDeclaration(field, fieldName);
                     })
                     .collect(Collectors.toList());
         }

@@ -1,24 +1,20 @@
 package com.github.longdt.vertxorm.codegen;
 
-import com.github.longdt.vertxorm.annotation.Driver;
+import com.github.longdt.vertxorm.repository.Configuration;
 import com.github.longdt.vertxorm.repository.CrudRepository;
-import com.github.longdt.vertxorm.repository.RowMapper;
-import com.github.longdt.vertxorm.repository.base.RowMapperImpl;
+import com.github.longdt.vertxorm.repository.SqlDialect;
 import com.squareup.javapoet.*;
 import io.vertx.sqlclient.Pool;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.io.IOException;
 
 import static com.google.auto.common.GeneratedAnnotationSpecs.generatedAnnotationSpec;
-import static com.squareup.javapoet.MethodSpec.constructorBuilder;
 import static com.squareup.javapoet.TypeSpec.classBuilder;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
@@ -59,67 +55,26 @@ public class RepositoryWriter {
     }
 
     private void addConstructor(TypeSpec.Builder factory, RepositoryDescriptor descriptor) {
-        MethodSpec.Builder constructor = constructorBuilder();
+        MethodSpec.Builder constructor = MethodSpec.constructorBuilder();
         constructor.addModifiers(PUBLIC);
         constructor.addParameter(TypeName.get(Pool.class), "pool");
         var entityDeclaration = descriptor.entityDeclaration();
         var entityElement = entityDeclaration.targetType();
-        var namingStrategy = descriptor.repositoryDeclaration().namingStrategy();
-        String tableName = entityDeclaration.tableName();
-        if (tableName.isEmpty()) {
-            var entityName = entityDeclaration.targetType().getSimpleName().toString();
-            tableName = NamingStrategies.resolveName(namingStrategy, entityName);
-        }
-        var pkField = entityDeclaration.pkField();
-        var pkConverter = pkField.converter();
-        pkConverter.ifPresent(converter -> constructor.addStatement("var pkConverter = new $1T()", converter));
-        entityDeclaration.fieldsMap().entrySet()
-                .stream()
-                .filter(e -> e.getValue().converter().isPresent())
-                .forEach(e -> constructor.addStatement("var $1LConverter = new $2T()", e.getKey(), e.getValue().converter().get()));
-        constructor.addCode("var mapperBuilder = $1T.<$2T, $3T>builder($4S, $3T::new)",
-                ClassName.get(RowMapper.class),
-                pkField.javaType(),
-                entityElement,
-                tableName);
-        constructor.addCode("\n\t\t.pk($1S, $2T::get$3L, $2T::set$3L, $4L)",
-                NamingStrategies.resolveName(namingStrategy, pkField.fieldName()),
-                entityElement,
-                toPropertyMethodSuffix(pkField.fieldName()),
-                entityDeclaration.autoGenPK());
-        pkConverter.ifPresent(v -> constructor.addCode("\n\t\t.pkConverter(pkConverter::convertToDatabaseColumn, pkConverter::convertToEntityAttribute)"));
-        for (var fieldEntry : entityDeclaration.fieldsMap().entrySet()) {
-            var field = fieldEntry.getValue();
-            if (field.converter().isPresent()) {
-                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L, $4LConverter::convertToDatabaseColumn, $4LConverter::convertToEntityAttribute)",
-                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
-                        entityElement,
-                        toPropertyMethodSuffix(field.fieldName()),
-                        fieldEntry.getKey());
-            } else if (field.javaType().getKind() == TypeKind.DECLARED && types.asElement(field.javaType()).getKind() == ElementKind.ENUM) {
-                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L, $4T::toString, $4T::valueOf)",
-                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
-                        entityElement,
-                        toPropertyMethodSuffix(field.fieldName()),
-                        field.javaType());
-            } else {
-                constructor.addCode("\n\t\t.addField($1S, $2T::get$3L, $2T::set$3L)",
-                        NamingStrategies.resolveName(namingStrategy, field.fieldName()),
-                        entityElement,
-                        toPropertyMethodSuffix(field.fieldName()));
-            }
-        }
-        constructor.addCode(";\n");
-        constructor.addStatement("init(pool, ($1T<$2T, $3T>) mapperBuilder.build())",
-                ClassName.get(RowMapperImpl.class),
-                pkField.javaType(),
+        var idField = entityDeclaration.idField();
+        constructor.addCode("var conf = new $T<$T, $T>()\n",
+                Configuration.class,
+                idField.javaType(),
                 entityElement);
+        constructor.addCode("\t\t.setTableName($T.$L)\n", ClassName.bestGuess(entityElement.toString() + Constant.TABLE), Constant.TABLE_NAME);
+        constructor.addCode("\t\t.setColumnNames($T.$L)\n", ClassName.bestGuess(entityElement.toString() + Constant.TABLE), Constant.COLUMN_NAMES);
+        constructor.addCode("\t\t.setIdAccessor($T.$L)\n", ClassName.bestGuess(entityElement.toString() + Constant.ID_ACCESSOR), Constant.INSTANCE);
+        constructor.addCode("\t\t.setParametersMapper($T.$L)\n", ClassName.bestGuess(entityElement.toString() + Constant.PARAMETERS_MAPPER), Constant.INSTANCE);
+        constructor.addCode("\t\t.setRowMapper($T.$L);\n", ClassName.bestGuess(entityElement.toString() + Constant.ROW_MAPPER), Constant.INSTANCE);
+        constructor.addStatement("init(pool, conf)");
         factory.addMethod(constructor.build());
     }
 
-    private String toPropertyMethodSuffix(String fieldName) {
-        return Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
-    }
+
 
     private boolean hasExtend(TypeMirror extendingType) {
         return !types.asElement(extendingType).toString().equals(CrudRepository.class.getTypeName());
@@ -130,12 +85,12 @@ public class RepositoryWriter {
             factory.superclass(descriptor.extendingType());
             return;
         }
-        var supperClass = descriptor.repositoryDeclaration().driver() == Driver.POSTGRESQL ?
+        var supperClass = descriptor.repositoryDeclaration().dialect() == SqlDialect.POSTGRES ?
                 com.github.longdt.vertxorm.repository.postgresql.AbstractCrudRepository.class
                 : com.github.longdt.vertxorm.repository.mysql.AbstractCrudRepository.class;
         factory.superclass(ParameterizedTypeName.get(
                 ClassName.get(supperClass),
-                ClassName.get(descriptor.entityDeclaration().pkField().javaType()),
+                ClassName.get(descriptor.entityDeclaration().idField().javaType()),
                 ClassName.get(descriptor.entityDeclaration().targetType())
         ));
     }

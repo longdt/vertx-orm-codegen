@@ -9,6 +9,6 @@ import java.util.Optional;
 abstract class FieldDeclaration {
     abstract String fieldName();
     abstract TypeMirror javaType();
-    abstract Optional<String> sqlType();
+    abstract Optional<TypeMirror> sqlType();
     abstract Optional<TypeMirror> converter();
 }

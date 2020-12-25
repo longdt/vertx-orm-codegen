@@ -56,7 +56,12 @@ public class CodeGenProcessor extends AbstractProcessor {
                     messager.printMessage(Diagnostic.Kind.ERROR, "Failed to process repository: " + repositoryDeclaration.className());
                     continue;
                 }
-                var descriptor = RepositoryDescriptor.create(repositoryDeclaration, entityDeclarationOpt.get());
+                var entityDeclaration = entityDeclarationOpt.get();
+                var descriptor = RepositoryDescriptor.create(repositoryDeclaration, entityDeclaration);
+                new EntityTableWriter(processingEnv).writeColumns(entityDeclaration);
+                new IdAccessorWriter(processingEnv).writeIdAccessor(entityDeclaration, repositoryDeclaration.dialect());
+                new ParametersMapperWriter(processingEnv).writeParametersMapper(entityDeclaration);
+                new RowMapperWriter(processingEnv).writeRowMapper(entityDeclaration);
                 new RepositoryWriter(processingEnv).writeRepository(descriptor);
             }
 

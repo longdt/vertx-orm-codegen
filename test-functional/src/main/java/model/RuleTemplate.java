@@ -1,16 +1,20 @@
 package model;
 
+import com.github.longdt.vertxorm.annotation.NamingStrategy;
+import com.github.longdt.vertxorm.format.Case;
+
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.Map;
+import java.util.UUID;
 
 @Entity
 public class RuleTemplate extends BaseEntity<RuleTemplate> {
     @Id
-    @GeneratedValue
-    private Long id;
+    @Convert(converter = IdConverter.class)
+    private UUID id;
     private String name;
     @Convert(converter = ArgumentsConverter.class)
     private Map<String, ArgumentDescription> arguments;
@@ -22,11 +26,11 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
     public RuleTemplate() {
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public RuleTemplate setId(Long id) {
+    public RuleTemplate setId(UUID id) {
         this.id = id;
         return this;
     }

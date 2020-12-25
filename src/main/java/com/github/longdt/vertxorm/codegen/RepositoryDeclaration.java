@@ -1,9 +1,9 @@
 package com.github.longdt.vertxorm.codegen;
 
-import com.github.longdt.vertxorm.annotation.Driver;
 import com.github.longdt.vertxorm.annotation.NamingStrategy;
 import com.github.longdt.vertxorm.annotation.Repository;
 import com.github.longdt.vertxorm.repository.CrudRepository;
+import com.github.longdt.vertxorm.repository.SqlDialect;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -35,8 +35,7 @@ abstract class RepositoryDeclaration {
     abstract Element target();
     abstract Optional<String> className();
     abstract TypeElement extendingType();
-    abstract Driver driver();
-    abstract NamingStrategy namingStrategy();
+    abstract SqlDialect dialect();
     abstract AnnotationMirror mirror();
     abstract ImmutableMap<String, AnnotationValue> valuesMap();
 
@@ -79,7 +78,7 @@ abstract class RepositoryDeclaration {
                     contentEquals(Repository.class.getName()));
             Map<String, AnnotationValue> values =
                     Mirrors.simplifyAnnotationValueMap(elements.getElementValuesWithDefaults(mirror));
-            checkState(values.size() == 4);
+            checkState(values.size() == 3);
 
             // className value is a string, so we can just call toString
             AnnotationValue classNameValue = values.get("className");
@@ -120,20 +119,16 @@ abstract class RepositoryDeclaration {
                     throw new IllegalStateException("Multiple constructors with no parameters??");
                 }
             }
-            AnnotationValue driverValue = checkNotNull(values.get("driver"));
-            Driver driver = AnnotationValues.asEnum(driverValue, Driver.class);
-
-            AnnotationValue namingStrategySValue = checkNotNull(values.get("namingStrategy"));
-            NamingStrategy namingStrategy = AnnotationValues.asEnum(namingStrategySValue, NamingStrategy.class);
+            AnnotationValue dialectValue = checkNotNull(values.get("dialect"));
+            SqlDialect dialect = AnnotationValues.asEnum(dialectValue, SqlDialect.class);
 
             return Optional.of(
                     new AutoValue_RepositoryDeclaration(
                             getAnnotatedType(element),
                             element,
-                            className.isEmpty() ? Optional.empty() : Optional.of(className),
+                            className.isEmpty() ? Optional.<String>empty() : Optional.of(className),
                             extendingType,
-                            driver,
-                            namingStrategy,
+                            dialect,
                             mirror,
                             ImmutableMap.copyOf(values)));
         }

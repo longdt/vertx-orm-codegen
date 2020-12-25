@@ -1,6 +1,7 @@
 package com.github.longdt.vertxorm.annotation;
 
 import com.github.longdt.vertxorm.repository.CrudRepository;
+import com.github.longdt.vertxorm.repository.SqlDialect;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,7 +15,8 @@ public @interface Repository {
      * The <i>simple</i> name of the generated repository; the repository is always generated in the same
      * package as the annotated type.  The default value (the empty string) will result in a factory
      * with the name of the type being created with {@code Impl} appended to the end. For example,
-     * the default name for a factory for {@code MyRepository} will be {@code MyRepositoryImpl}.
+     * the default name for a factory for {@code MyRepository} will be {@code MyRepositoryPostgres} if dialect = {@code SqlDialect.POSTGRES}
+     * or {@code MyRepositoryMysql} if dialect = {@code SqlDialect.MYSQL}.
      */
     String className() default "";
 
@@ -23,7 +25,5 @@ public @interface Repository {
      */
     Class<? extends CrudRepository> extending() default CrudRepository.class;
 
-    Driver driver() default Driver.POSTGRESQL;
-
-    NamingStrategy namingStrategy() default NamingStrategy.SNAKE_CASE;
+    SqlDialect dialect() default SqlDialect.POSTGRES;
 }

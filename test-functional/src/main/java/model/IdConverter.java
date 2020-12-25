@@ -1,15 +1,16 @@
 package model;
 
 import javax.persistence.AttributeConverter;
+import java.util.UUID;
 
-public class IdConverter implements AttributeConverter<Long, String> {
+public class IdConverter implements AttributeConverter<UUID, String> {
     @Override
-    public String convertToDatabaseColumn(Long attribute) {
+    public String convertToDatabaseColumn(UUID attribute) {
         return attribute.toString();
     }
 
     @Override
-    public Long convertToEntityAttribute(String dbData) {
-        return Long.parseLong(dbData);
+    public UUID convertToEntityAttribute(String dbData) {
+        return UUID.fromString(dbData);
     }
 }
