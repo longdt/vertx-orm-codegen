@@ -136,7 +136,7 @@ public class RowMapperWriter {
     private void addRowGetCode(MethodSpec.Builder methodBuilder, String varName, TypeMirror entityFieldType, int index) {
         var rowType = javaType2RowTypes.get(entityFieldType.toString());
         if (rowType == null) {
-            methodBuilder.addCode("($T) $L.getValue($L)", entityFieldType, varName, index);
+            methodBuilder.addCode("$L.get($T.class, $L)", varName, entityFieldType, index);
         } else {
             methodBuilder.addCode("$L.get$L($L)", varName, rowType, index);
         }
