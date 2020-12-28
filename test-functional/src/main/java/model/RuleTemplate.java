@@ -5,12 +5,12 @@ import com.github.longdt.vertxorm.format.Case;
 
 import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.Map;
 import java.util.UUID;
 
 @Entity
+@NamingStrategy(Case.SNAKE_CASE)
 public class RuleTemplate extends BaseEntity<RuleTemplate> {
     @Id
     @Convert(converter = IdConverter.class)

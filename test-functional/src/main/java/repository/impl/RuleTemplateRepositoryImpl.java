@@ -1,8 +1,7 @@
 package repository.impl;
 
-import com.github.longdt.vertxorm.repository.postgresql.AbstractCrudRepository;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import com.github.longdt.vertxorm.repository.mysql.AbstractCrudRepository;
+import io.vertx.core.Future;
 import model.RuleTemplate;
 import repository.RuleTemplateRepository;
 
@@ -10,7 +9,7 @@ import java.util.UUID;
 
 public class RuleTemplateRepositoryImpl extends AbstractCrudRepository<UUID, RuleTemplate> implements RuleTemplateRepository {
     @Override
-    public void doSomething(Handler<AsyncResult<Long>> resultHandler) {
-
+    public Future<Long> doSomething(int a) {
+        return Future.succeededFuture();
     }
 }
