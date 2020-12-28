@@ -1,6 +1,5 @@
 package com.github.longdt.vertxorm.codegen;
 
-import com.github.longdt.vertxorm.annotation.NamingStrategy;
 import com.github.longdt.vertxorm.annotation.Repository;
 import com.github.longdt.vertxorm.repository.CrudRepository;
 import com.github.longdt.vertxorm.repository.SqlDialect;
@@ -48,7 +47,14 @@ abstract class RepositoryDeclaration {
         for (String enclosingSimpleName : targetEnclosingSimpleNames()) {
             builder.append(enclosingSimpleName).append('_');
         }
-        builder.append(targetType().getSimpleName()).append("Factory");
+        builder.append(targetType().getSimpleName());
+        if (dialect() == SqlDialect.MYSQL) {
+            builder.append("Mysql");
+        } else if (dialect() == SqlDialect.POSTGRES) {
+            builder.append("Postgres");
+        } else {
+            builder.append("Impl");
+        }
         return PackageAndClass.of(packageName, builder.toString());
     }
 
