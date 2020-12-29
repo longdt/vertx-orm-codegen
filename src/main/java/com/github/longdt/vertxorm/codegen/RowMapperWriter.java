@@ -57,6 +57,7 @@ public class RowMapperWriter {
                 Map.entry(Buffer.class.getCanonicalName(), "Buffer"),
                 Map.entry(JsonObject.class.getCanonicalName(), "JsonObject"),
                 Map.entry(JsonArray.class.getCanonicalName(), "JsonArray"),
+                Map.entry(Object.class.getCanonicalName(), "Value"),
                 Map.entry(Numeric.class.getCanonicalName(), "Numeric"));
     }
 

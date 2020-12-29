@@ -36,7 +36,7 @@ public class EntityTableWriter {
     }
 
     void writeColumns(EntityDeclaration entityDeclaration) throws IOException {
-        String entityColumnsName = entityDeclaration.targetType().getSimpleName().toString() + "Table";
+        String entityColumnsName = entityDeclaration.targetType().getSimpleName().toString() + Constant.TABLE;
         TypeSpec.Builder factory =
                 classBuilder(entityColumnsName)
                         .addOriginatingElement(entityDeclaration.targetType());

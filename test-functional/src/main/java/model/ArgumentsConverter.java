@@ -3,21 +3,18 @@ package model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.jackson.DatabindCodec;
-import io.vertx.core.json.jackson.JacksonCodec;
-import io.vertx.core.spi.json.JsonCodec;
 
 import javax.persistence.AttributeConverter;
 import java.util.Map;
 
-public class ArgumentsConverter implements AttributeConverter<Map<String, ArgumentDescription>, String> {
+public class ArgumentsConverter implements AttributeConverter<Map<String, ArgumentDescription>, Object> {
     @Override
-    public String convertToDatabaseColumn(Map<String, ArgumentDescription> attribute) {
+    public Object convertToDatabaseColumn(Map<String, ArgumentDescription> attribute) {
         return Json.encode(attribute);
     }
 
     @Override
-    public Map<String, ArgumentDescription> convertToEntityAttribute(String dbData) {
-        return ((DatabindCodec) Json.CODEC).fromString(dbData, new TypeReference<>() {
-        });
+    public Map<String, ArgumentDescription> convertToEntityAttribute(Object dbData) {
+        return ((DatabindCodec) Json.CODEC).fromString((String) dbData, new TypeReference<>() {});
     }
 }
