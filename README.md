@@ -1,5 +1,5 @@
 ## Vertx-Orm-Codegen
-Simple annotation processor which automatic generate Repository implementation which sound like Spring does
+Simple annotation processor which generates Repository implementation
 ## Developers
 ### Testing
 Out of the box, the test suite runs a Docker container using TestContainers.
