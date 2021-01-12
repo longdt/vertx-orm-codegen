@@ -21,14 +21,12 @@ public class CodeGenProcessor extends AbstractProcessor {
     private RepositoryDeclaration.Factory repositoryDF;
     private EntityDeclaration.Factory entityDF;
     private Messager messager;
-    private Elements elements;
-    private Types types;
 
     @Override
     public void init(ProcessingEnvironment env) {
         super.init(env);
-        elements = processingEnv.getElementUtils();
-        types = processingEnv.getTypeUtils();
+        var elements = processingEnv.getElementUtils();
+        var types = processingEnv.getTypeUtils();
         messager = env.getMessager();
         repositoryDF = new RepositoryDeclaration.Factory(elements, messager);
         entityDF = new EntityDeclaration.Factory(elements, types, messager);
