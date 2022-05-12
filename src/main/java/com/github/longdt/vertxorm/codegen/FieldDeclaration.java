@@ -11,4 +11,5 @@ abstract class FieldDeclaration {
     abstract TypeMirror javaType();
     abstract Optional<TypeMirror> sqlType();
     abstract Optional<TypeMirror> converter();
+    abstract Optional<String> columnName();
 }

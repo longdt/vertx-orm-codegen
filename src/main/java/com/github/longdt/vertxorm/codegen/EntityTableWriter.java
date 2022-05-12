@@ -81,23 +81,23 @@ public class EntityTableWriter {
 
     private void addColumnFields(TypeSpec.Builder factory, EntityDeclaration entityDeclaration) {
         var namingStrategy = entityDeclaration.namingStrategy();
-        var idFieldName = addColumnField(factory, namingStrategy, entityDeclaration.idField().fieldName());
-        var otherFieldNames = addColumnFields(factory, namingStrategy, entityDeclaration.fieldsMap().keySet());
+        var idFieldName = addColumnField(factory, namingStrategy, entityDeclaration.idField().fieldName(), entityDeclaration.idField().columnName().orElse(null));
+        var otherFieldNames = addColumnFields(factory, namingStrategy, entityDeclaration.fieldsMap().values());
         addColumnNamesField(factory, idFieldName, otherFieldNames);
     }
 
-    private String addColumnField(TypeSpec.Builder factory, Case namingStrategy, String attrName) {
+    private String addColumnField(TypeSpec.Builder factory, Case namingStrategy, String attrName, String columnName) {
         var fieldName = NamingStrategies.camelToScreamSnake(attrName);
         factory.addField(
                 FieldSpec.builder(String.class, fieldName)
                         .addModifiers(PUBLIC, Modifier.STATIC, Modifier.FINAL)
-                        .initializer("$S", NamingStrategies.resolveName(namingStrategy, attrName))
+                        .initializer("$S", columnName == null ? NamingStrategies.resolveName(namingStrategy, attrName) : columnName)
                         .build());
         return fieldName;
     }
 
-    private List<String> addColumnFields(TypeSpec.Builder factory, Case namingStrategy, Collection<String> otherNames) {
-        return otherNames.stream().map(fieldName -> addColumnField(factory, namingStrategy, fieldName)).collect(Collectors.toList());
+    private List<String> addColumnFields(TypeSpec.Builder factory, Case namingStrategy, Collection<FieldDeclaration> otherFields) {
+        return otherFields.stream().map(fd -> addColumnField(factory, namingStrategy, fd.fieldName(), fd.columnName().orElse(null))).collect(Collectors.toList());
     }
 
     private void addColumnNamesField(TypeSpec.Builder factory, String idFieldName, Collection<String> otherFieldNames) {

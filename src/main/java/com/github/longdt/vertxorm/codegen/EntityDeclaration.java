@@ -14,10 +14,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -127,7 +124,10 @@ abstract class EntityDeclaration {
                 var declaredType = (DeclaredType) converterElement.getInterfaces().get(0);
                 sqlType = ((DeclaredType) declaredType.getTypeArguments().get(1)).asElement().asType();
             }
-            return new AutoValue_FieldDeclaration(fieldName, field.asType(), Optional.ofNullable(sqlType), Optional.ofNullable(converter));
+
+            Column column = field.getAnnotation(Column.class);
+            String columnName = column != null ? column.name() : null;
+            return new AutoValue_FieldDeclaration(fieldName, field.asType(), Optional.ofNullable(sqlType), Optional.ofNullable(converter), Optional.ofNullable(columnName));
         }
 
         List<FieldDeclaration> createFields(TypeElement entityElement, List<ExecutableElement> methods) {

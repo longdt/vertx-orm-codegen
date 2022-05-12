@@ -3,6 +3,7 @@ package model;
 import com.github.longdt.vertxorm.annotation.NamingStrategy;
 import com.github.longdt.vertxorm.format.Case;
 
+import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -18,6 +19,7 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
     private String name;
     @Convert(converter = ArgumentsConverter.class)
     private Map<String, ArgumentDescription> arguments;
+    @Column(name = "job")
     private String flinkJob;
     private String assignee;
     private boolean active;
