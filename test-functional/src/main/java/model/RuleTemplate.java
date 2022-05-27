@@ -3,10 +3,7 @@ package model;
 import com.github.longdt.vertxorm.annotation.NamingStrategy;
 import com.github.longdt.vertxorm.format.Case;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,6 +21,8 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
     private String assignee;
     private boolean active;
     private RuleTemplateStatus status;
+    @Transient
+    private String someIgnored;
 
     public RuleTemplate() {
     }
@@ -91,6 +90,15 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
         return this;
     }
 
+    public String getSomeIgnored() {
+        return someIgnored;
+    }
+
+    public RuleTemplate setSomeIgnored(String someIgnored) {
+        this.someIgnored = someIgnored;
+        return this;
+    }
+
     @Override
     protected RuleTemplate self() {
         return this;
@@ -98,13 +106,15 @@ public class RuleTemplate extends BaseEntity<RuleTemplate> {
 
     @Override
     public String toString() {
-        return "model.RuleTemplate{" +
+        return "RuleTemplate{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", arguments=" + arguments +
                 ", flinkJob='" + flinkJob + '\'' +
                 ", assignee='" + assignee + '\'' +
                 ", active=" + active +
+                ", status=" + status +
+                ", someIgnored='" + someIgnored + '\'' +
                 '}';
     }
 }

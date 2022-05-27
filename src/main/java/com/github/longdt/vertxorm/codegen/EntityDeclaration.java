@@ -133,6 +133,7 @@ abstract class EntityDeclaration {
         List<FieldDeclaration> createFields(TypeElement entityElement, List<ExecutableElement> methods) {
             var fieldMap = AnnotationHelper.getAllFields(types, entityElement)
                     .stream()
+                    .filter(ve -> ve.getAnnotation(Transient.class) == null)
                     .collect(Collectors.toMap(e -> e.getSimpleName().toString(), Function.identity()));
             var getterMap = new HashMap<String, ExecutableElement>(methods.size());
             var setterMap = new HashMap<String, ExecutableElement>(methods.size());
@@ -146,12 +147,9 @@ abstract class EntityDeclaration {
                     setterMap.put(fieldName, method);
                 }
             }
-            return getterMap.keySet().stream()
-                    .filter(setterMap::containsKey)
-                    .map(fieldName -> {
-                        var field = fieldMap.get(fieldName);
-                        return createFieldDeclaration(field, fieldName);
-                    })
+            return fieldMap.entrySet().stream()
+                    .filter(fieldEntry -> getterMap.containsKey(fieldEntry.getKey()) && setterMap.containsKey(fieldEntry.getKey()))
+                    .map(fieldEntry -> createFieldDeclaration(fieldEntry.getValue(), fieldEntry.getKey()))
                     .collect(Collectors.toList());
         }
 
