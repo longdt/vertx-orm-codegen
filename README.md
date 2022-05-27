@@ -8,7 +8,7 @@ Out of the box, the test suite runs a Docker container using TestContainers.
 <dependency>
     <groupId>com.github.longdt</groupId>
     <artifactId>vertx-orm-codegen</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
     <scope>provided</scope>
 </dependency>
 ```
